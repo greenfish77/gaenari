@@ -64,7 +64,7 @@ cmake_minimum_required(VERSION 3.6)
 # settings
 ##########
 # project.
-project(gaenari VERSION 1.0.0)
+project(gaenari VERSION 1.0.0.1)
 
 #################################
 # auto git ignore build directory
