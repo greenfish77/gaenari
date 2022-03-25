@@ -108,4 +108,74 @@ inline void scenario_predict(_in const std::string& projectname) {
 	TESTCASE_OK("predict", predict_test2, projectname, instances, 4);
 }
 
+inline void scenario_limit_chunk(_in const std::string& projectname) {
+	// create project.
+	TESTCASE_OK("create_project", create_project_test, projectname);
+
+	// test parameter.
+	int trials		= 1;
+	int instances	= 100;
+	int func		= 1;
+	int seed		= 0;
+	double pert		= 0.05;
+
+	// build 5 chunks. (5 * 100 = 500 instances)
+
+	func = 1;
+	TESTCASE_OK("no_concept_drifting", insert_update_test, projectname, trials, instances, func, seed++, pert, 99);
+
+	func = 2;
+	TESTCASE_OK("concept_drifted", insert_update_test, projectname, trials, instances, func, seed++, pert, 148);
+
+	func = 2;
+	TESTCASE_OK("concept_drifted", insert_update_test, projectname, trials, instances, func, seed++, pert, 202);
+
+	func = 2;
+	TESTCASE_OK("concept_drifted", insert_update_test, projectname, trials, instances, func, seed++, pert, 249);
+
+	func = 2;
+	TESTCASE_OK("concept_drifted", insert_update_test, projectname, trials, instances, func, seed++, pert, 294);
+
+	// rebuild.
+	TESTCASE_OK("rebuild", rebuld_test, projectname, 480);
+
+	// add 2 chunks. (7 * 100 = 700 instances)
+	func = 1;
+	TESTCASE_OK("no_concept_drifting", insert_update_test, projectname, trials, instances, func, seed++, pert, 530);
+
+	func = 2;
+	TESTCASE_OK("concept_drifted", insert_update_test, projectname, trials, instances, func, seed++, pert, 618);
+
+	// limit.chunk on. (limit 300 ~ 600)
+	TESTCASE_OK("limit_chunk_property_on", set_property_test, projectname, "limit.chunk.instance_upper_bound", "600");
+	TESTCASE_OK("limit_chunk_property_on", set_property_test, projectname, "limit.chunk.instance_lower_bound", "300");
+	TESTCASE_OK("limit_chunk_property_on", set_property_test, projectname, "limit.chunk.use", "true");
+
+	// check global variable.
+	TESTCASE_OK("global_variable_test", global_variable_test_int64, projectname, "instance_count", 700);
+
+	// add one chunk.
+	func = 2;
+	TESTCASE_OK("concept_drifted", insert_update_test, projectname, trials, instances, func, seed++, pert, 226);
+
+	// check global variable.
+	TESTCASE_OK("global_variable_test", global_variable_test_int64, projectname, "instance_count", 300);
+
+	// add 5 chunks.
+	func = 1;
+	TESTCASE_OK("no_concept_drifting", insert_update_test, projectname, trials, instances, func, seed++, pert, 279);
+	TESTCASE_OK("no_concept_drifting", insert_update_test, projectname, trials, instances, func, seed++, pert, 329);
+	TESTCASE_OK("no_concept_drifting", insert_update_test, projectname, trials, instances, func, seed++, pert, 376);
+	TESTCASE_OK("no_concept_drifting", insert_update_test, projectname, trials, instances, func, seed++, pert, 158);
+	TESTCASE_OK("no_concept_drifting", insert_update_test, projectname, trials, instances, func, seed++, pert, 213);
+
+	// check global variable.
+	TESTCASE_OK("global_variable_test", global_variable_test_int64, projectname, "instance_count", 400);
+	TESTCASE_OK("global_variable_test", global_variable_test_int64, projectname, "instance_correct_count", 213);
+
+	// rebuild.
+	TESTCASE_OK("rebuild", rebuld_test, projectname, 355);
+	TESTCASE_OK("global_variable_test", global_variable_test_int64, projectname, "instance_correct_count", 355);
+}
+
 #endif // HEADER_TESTSCENARIO_HPP

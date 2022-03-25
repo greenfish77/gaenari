@@ -256,8 +256,30 @@ inline void sqlite_t::build_stmt_pool(void) {
 						stmt_info{get_stmt(sql),
 						{}}});
 
+	// update chunk_total_count.
+	sql = schema.get_sql("UPDATE ${chunk} SET total_count=? WHERE id=?");
+	stmt_pool.insert({	stmt::update_chunk_total_count,
+						stmt_info{get_stmt(sql),
+						{}}});
+
+	// get chunk_list.
+	sql = schema.get_sql("SELECT * FROM ${chunk} ORDER BY datetime ASC");
+	stmt_pool.insert({	stmt::get_chunk_list,
+						stmt_info{get_stmt(sql),
+						schema.fields_include(type::table::chunk, {})}});
+
+	// get chunk_updated.
+	sql = schema.get_sql("SELECT updated FROM ${chunk} WHERE id=?");
+	stmt_pool.insert({	stmt::get_chunk_updated,
+						stmt_info{get_stmt(sql),
+						type::fields{{"updated", type::field_type::TINYINT}}}});
+
 	// update leaf_info.
-	sql = schema.get_sql("UPDATE ${leaf_info} SET correct_count=correct_count+?, total_count=total_count+?, accuracy=(CAST(correct_count AS REAL)+?)/(total_count+?) WHERE id=?");
+	sql = schema.get_sql("UPDATE ${leaf_info} "
+						 "SET correct_count=correct_count+?, "
+							 "total_count=total_count+?, "
+							 "accuracy=(CASE WHEN total_count+?=0 THEN 0.0 ELSE (CAST(correct_count AS REAL)+?)/(total_count+?) END) "
+						 "WHERE id=?");
 	stmt_pool.insert({	stmt::update_leaf_info,
 						stmt_info{get_stmt(sql),
 						{}}});
@@ -342,6 +364,63 @@ inline void sqlite_t::build_stmt_pool(void) {
 	stmt_pool.insert({	stmt::get_generation_id_by_treenode_id,
 						stmt_info{get_stmt(sql),
 						schema.fields_include(type::table::treenode, {"ref_generation_id"})}});
+
+	// get leaf_info_by_chunk_id.
+	auto& _leaf_info_table = schema.get_table_info(type::table::leaf_info);
+	_names = common::get_names(_leaf_info_table.fields, {}, false, "${leaf_info}", true, "");	// ${leaf_info}."f1" as "f1", ...
+	sql = schema.get_sql("SELECT "
+							"${instance}.\"%y%\" AS \"instance.actual\", " 
+							"${instance_info}.weak_count AS \"instance_info.weak_count\", "
+							+ _names + " "
+						 "FROM ${instance_info} "
+							"INNER JOIN ${instance} ON ${instance_info}.id = ${instance}.id "
+							"INNER JOIN ${treenode} ON ${instance_info}.ref_leaf_treenode_id = ${treenode}.id "
+							"INNER JOIN ${leaf_info} ON ${treenode}.ref_leaf_info_id = ${leaf_info}.id "
+						 "WHERE ${instance_info}.ref_chunk_id=?");
+	stmt_pool.insert({	stmt::get_leaf_info_by_chunk_id,
+						stmt_info{get_stmt(sql),
+						schema.fields_merge({
+						type::fields{
+							{"instance.actual", type::field_type::INTEGER},
+							{"instance_info.weak_count", schema.field_type(type::table::instance_info, "weak_count")}
+						},
+						schema.fields_include(type::table::leaf_info, {})})}});
+
+	// get total_count_by_chunk_id.
+	sql = schema.get_sql("SELECT total_count FROM ${chunk} WHERE id=?");
+	stmt_pool.insert({	stmt::get_total_count_by_chunk_id,
+						stmt_info{get_stmt(sql),
+						schema.fields_include(type::table::leaf_info, {"total_count"})}});
+
+	// delete instance_by_chunk_id.
+	sql = schema.get_sql("DELETE FROM ${instance} "
+						 "WHERE id IN("
+							"SELECT ${instance_info}.id "
+							"FROM ${instance_info} "
+							"INNER JOIN ${chunk} ON ${instance_info}.ref_chunk_id = ${chunk}.id "
+							"WHERE ${chunk}.id=?"
+						 ")");
+	stmt_pool.insert({	stmt::delete_instance_by_chunk_id,
+						stmt_info{get_stmt(sql),
+						{}}});
+
+	// delete instance_info_by_chunk_id.
+	sql = schema.get_sql("DELETE FROM ${instance_info} "
+						 "WHERE id IN("
+							"SELECT ${instance_info}.id "
+							"FROM ${instance_info} "
+							"INNER JOIN ${chunk} ON ${instance_info}.ref_chunk_id = ${chunk}.id "
+							"WHERE ${chunk}.id=?"
+						 ")");
+	stmt_pool.insert({	stmt::delete_instance_info_by_chunk_id,
+						stmt_info{get_stmt(sql),
+						{}}});
+
+	// delete chunk_by_id.
+	sql = schema.get_sql("DELETE FROM ${chunk} WHERE id=?");
+	stmt_pool.insert({	stmt::delete_chunk_by_id,
+						stmt_info{get_stmt(sql),
+						{}}});
 
 	// get global_row_count.
 	sql = schema.get_sql("SELECT COUNT(*) FROM ${global}");
@@ -641,8 +720,23 @@ inline void sqlite_t::update_chunk(_in int64_t chunk_id, _in bool updated, _in i
 	if (not result.empty()) THROW_SUPUL_INTERNAL_ERROR0;
 }
 
+inline void sqlite_t::update_chunk_total_count(_in int64_t chunk_id, _in int64_t total_count) {
+	auto result = execute(stmt::update_chunk_total_count, {total_count, chunk_id}, true);
+	if (not result.empty()) THROW_SUPUL_INTERNAL_ERROR0;
+}
+
+inline void	sqlite_t::get_chunk_list(_in callback_query cb) {
+	execute(stmt::get_chunk_list, {}, cb);
+}
+
+inline bool	sqlite_t::get_chunk_updated(_in int64_t chunk_id) {
+	auto result = execute(stmt::get_chunk_updated, {chunk_id}, true);
+	if (common::get_variant_int64(result, "updated") == 1) return true;
+	return false;
+}
+
 inline void sqlite_t::update_leaf_info(_in int64_t leaf_info_id, _in int64_t increment_correct_count, _in int64_t increment_total_count) {
-	auto result = execute(stmt::update_leaf_info, {increment_correct_count, increment_total_count, increment_correct_count, increment_total_count, leaf_info_id}, true);
+	auto result = execute(stmt::update_leaf_info, {increment_correct_count, increment_total_count, increment_total_count, increment_correct_count, increment_total_count, leaf_info_id}, true);
 	if (not result.empty()) THROW_SUPUL_INTERNAL_ERROR0;
 }
 
@@ -695,6 +789,30 @@ inline void sqlite_t::update_rule_value_integer(_in int64_t rule_id, _in int64_t
 inline int64_t sqlite_t::get_generation_id_by_treenode_id(_in int64_t treenode_id) {
 	auto result = execute(stmt::get_generation_id_by_treenode_id, {treenode_id}, true);
 	return common::get_variant_int64(result, "ref_generation_id");
+}
+
+inline void sqlite_t::get_leaf_info_by_chunk_id(_in int64_t chunk_id, _in callback_query cb) {
+	execute(stmt::get_leaf_info_by_chunk_id, {chunk_id}, cb);
+}
+
+inline int64_t sqlite_t::get_total_count_by_chunk_id(_in int64_t chunk_id) {
+	auto result = execute(stmt::get_total_count_by_chunk_id, {chunk_id}, true);
+	return common::get_variant_int64(result, "total_count");
+}
+
+inline void	sqlite_t::delete_instance_by_chunk_id(_in int64_t chunk_id) {
+	auto result = execute(stmt::delete_instance_by_chunk_id, {chunk_id}, true);
+	if (not result.empty()) THROW_SUPUL_INTERNAL_ERROR0;
+}
+
+inline void	sqlite_t::delete_instance_info_by_chunk_id(_in int64_t chunk_id) {
+	auto result = execute(stmt::delete_instance_info_by_chunk_id, {chunk_id}, true);
+	if (not result.empty()) THROW_SUPUL_INTERNAL_ERROR0;
+}
+
+inline void	sqlite_t::delete_chunk_by_id(_in int64_t chunk_id) {
+	auto result = execute(stmt::delete_chunk_by_id, {chunk_id}, true);
+	if (not result.empty()) THROW_SUPUL_INTERNAL_ERROR0;
 }
 
 inline int64_t sqlite_t::get_global_row_count(void) {

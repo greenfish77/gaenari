@@ -62,7 +62,7 @@ therefore, in this case, it adaps to new data through continous `incremental lea
 
 ![design](./doc/img/design.gif)
 
-a single `decision tree` and `dataset` are implemented in `ganari`.
+a single `decision tree` and `dataset` are implemented in `gaenari`.
 `supul` implements a public supul methods that can be called externally.
 database and model processing for incremental learning are key.
 
@@ -665,4 +665,22 @@ see the comments in the code for detail.
 |||errmsg|
 |property||set_property|
 |||get_property|
+|||save|
+|||reload|
 |test||verify|
+
+### property
+
+the property.txt file in the project directory is the configuration file.  
+call set_property() or modify it yourself. see the comments in property.txt for detail.
+
+|name|change possible|type|default|desc|
+|-|:-:|-|-|-|
+|ver||str||library version|
+|db.type||str|`none`|support `sqlite`|
+|db.tablename.prefix||str||set prefix table name|
+|model.weak_treenode_condition.accuracy|O|double|0.8|see comment|
+|model.weak_treenode_condition.total_count|O|int|5|see comment|
+|limit.chunk.use|O|bool|true|see comment|
+|limit.chunk.instance_lower_bound|O|int|1000000|see comment|
+|limit.chunk.instance_upper_bound|O|int|2000000|see comment|

@@ -516,6 +516,38 @@ inline void verify_confusion_matrix(_in const std::vector<type::map_variant>& a,
 	// passed.
 }
 
+inline bool is_version_update(_in const std::string& cur, _in const std::string& next) {
+	std::vector<std::string> cur_items;
+	std::vector<std::string> next_items;
+
+	// parse.
+	gaenari::dataset::csv_reader::parse_delim(cur, '.', cur_items);
+	gaenari::dataset::csv_reader::parse_delim(next,'.', next_items);
+
+	// set four items.
+	if (cur_items.size() == 3)  cur_items.emplace_back("0");
+	if (next_items.size() == 3) next_items.emplace_back("0");
+
+	// valid check.
+	if ((cur_items.size() != 4) or (next_items.size() != 4)) THROW_SUPUL_ERROR2("invalid version, %0 or %1.", cur, next);
+	for (size_t i=0; i<4; i++) {
+		if (cur_items[i].empty() or next_items[i].empty()) THROW_SUPUL_ERROR2("invalid version, %0 or %1.", cur, next);
+		if (not (std::all_of(cur_items[i].begin(), cur_items[i].end(), ::isdigit) and
+				 std::all_of(next_items[i].begin(),next_items[i].end(),::isdigit))) {
+			THROW_SUPUL_ERROR2("invalid version, %0 or %1.", cur, next);
+		}
+	}
+
+	// compare.
+	for (size_t i=0; i<4; i++) {
+		auto c = std::atoi(cur_items[i].c_str());
+		auto n = std::atoi(next_items[i].c_str());
+		if (c < n) return true;
+		if (c > n) return false;
+	}
+	return false;
+}
+
 } // common
 } // supul
 

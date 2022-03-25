@@ -243,7 +243,8 @@ inline bool is_approximate_equal(_in real_t a, _in real_t b) {
 
 inline std::vector<std::string> get_test_scenario_names(_in int argc, _in const char** argv) {
 	if ((argc <= 0) or (not argv)) TEST_FAIL("invalid cmdline.");
-	if (argc == 1) return {"default", "predict"};
+	// default test scenarios.
+	if (argc == 1) return {"default", "predict", "limit_chunk"};
 	
 	std::vector<std::string> r;
 	for (int i=1; i<argc; i++) {

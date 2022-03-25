@@ -173,8 +173,24 @@ public:
 	// UPDATE chunk SET updated=?, initial_correct_count=?, total_count=?, initial_accuracy=? WHERE id=?
 	virtual void update_chunk(_in int64_t chunk_id, _in bool updated, _in int64_t initial_correct_count, _in int64_t total_count, _in double initial_accuracy) = 0;
 
+	// update chunk total_count.
+	// UPDATE chunk SET total_count=? WHERE id=?
+	virtual void update_chunk_total_count(_in int64_t chunk_id, _in int64_t total_count) = 0;
+	
+	// get chunk list.
+	// SELECT * FROM chunk ORDER BY datetime ASC
+	virtual void get_chunk_list(_in callback_query cb) = 0;
+
+	// get chunk_updated.
+	// SELECT updated FROM chunk WHERE id=?
+	virtual bool get_chunk_updated(_in int64_t chunk_id) = 0;
+
 	// update leaf_info.
-	// UPDATE leaf_info SET correct_count = correct_count + ?, total_count = total_count + ?, accuracy = (CAST(correct_count AS REAL) + ?) / (total_count + ?) WHERE id = ?
+	// UPDATE leaf_info 
+	// SET correct_count=correct_count+?,
+	//	   total_count=total_count+?,
+	//	   accuracy=(CASE WHEN total_count+?=0 THEN 0.0 ELSE (CASE(correct_count AS REAL)+?)/(total_count+?) END)
+	// WHERE=?
 	virtual void update_leaf_info(_in int64_t leaf_info_id, _in int64_t increment_correct_count, _in int64_t increment_total_count) = 0;
 
 	// get_root_ref_treenode_id.
@@ -245,6 +261,45 @@ public:
 	// get generation_id_by_treenode_id.
 	// SELECT ref_generation_id FROM treenode WHERE id=?
 	virtual int64_t get_generation_id_by_treenode_id(_in int64_t treenode_id) = 0;
+
+	// get leaf_info by chunk_id.
+	// SELECT instance."%y" as "instance.actual",
+	//		  instance_info.weak_count as "instance_info.weak_count", 
+	//		  leaf_info.*
+	// FROM instance_info
+	//		INNER JOIN instance ON instance_info.id = instance.id
+	//		INNER JOIN treenode ON instance_info.ref_leaf_treenode_id = treenode.id
+	//		INNER JOIN leaf_info ON treenode.ref_leaf_info_id = leaf_info.id
+	// WHERE instance_info.ref_chunk_id = ?
+	virtual void get_leaf_info_by_chunk_id(_in int64_t chunk_id, _in callback_query cb) = 0;
+
+	// get chunk total_count by chunk_id.
+	// SELECT total_count FROM chunk WHERE id=?
+	virtual int64_t get_total_count_by_chunk_id(_in int64_t chunk_id) = 0;
+
+	// delete instance_by_chunk_id.
+	// DELETE FROM instance
+	// WHERE id IN(
+	// 		SELECT instance_info.id
+	// 		FROM instance_info
+	// 		INNER JOIN chunk ON instance_info.ref_chunk_id = chunk.id
+	// 		WHERE chunk.id = ?
+	// )
+	virtual void delete_instance_by_chunk_id(_in int64_t chunk_id) = 0;
+
+	// delete instance_info_by_chunk_id.
+	// DELETE FROM instance_info
+	// WHERE id IN(
+	// 		SELECT instance_info.id
+	// 		FROM instance_info
+	// 		INNER JOIN chunk ON instance_info.ref_chunk_id = chunk.id
+	// 		WHERE chunk.id = ?
+	// )
+	virtual void delete_instance_info_by_chunk_id(_in int64_t chunk_id) = 0;
+
+	// delete chunk_by_id.
+	// DELETE FROM chunk WHERE id=?
+	virtual void delete_chunk_by_id(_in int64_t chunk_id) = 0;
 
 	// get global_row_count.
 	// SELECT COUNT(*) FROM global

@@ -83,13 +83,27 @@ inline void insert_update_test(_in const std::string& projectname, _in int trial
 	if (updated_instance_count == 0) TEST_FAIL("update_instance_count is zero.");
 	auto instance_accuracy_calc	= static_cast<double>(instance_correct_count) / static_cast<double>(updated_instance_count);
 
-	// test.
-	int64_t trials_instance = static_cast<int64_t>(trials) * static_cast<int64_t>(instances);
-	if (instance_count != trials_instance + before_instance_count)			 TEST_FAIL2("fail: %0 != %1.", instance_count, trials_instance + before_instance_count);
-	if (updated_instance_count != instance_count)							 TEST_FAIL2("fail: %0 != %1.", updated_instance_count, instance_count);
-	if (instance_correct_count != expected_instance_correct_count)			 TEST_FAIL2("fail: %0 != %1.", expected_instance_correct_count, instance_correct_count);
-	if (not is_approximate_equal(instance_accuracy, instance_accuracy_calc)) TEST_FAIL2("fail: %0 != %1.", instance_accuracy, instance_accuracy_calc);
+	// check using chunk limit.
+	bool chunk_limit_use = supul->api.property.get_property("limit.chunk.use", "false") == "true";
 
+	// test.
+	if (not chunk_limit_use) {
+		int64_t trials_instance = static_cast<int64_t>(trials) * static_cast<int64_t>(instances);
+		if (instance_count != trials_instance + before_instance_count)			 TEST_FAIL2("fail(instance_count): %0 != %1.", instance_count, trials_instance + before_instance_count);
+		if (updated_instance_count != instance_count)							 TEST_FAIL2("fail(updated_instance_count): %0 != %1.", updated_instance_count, instance_count);
+		if (instance_correct_count != expected_instance_correct_count)			 TEST_FAIL2("fail(instance_correct_count): %0 != %1.", expected_instance_correct_count, instance_correct_count);
+		if (not is_approximate_equal(instance_accuracy, instance_accuracy_calc)) TEST_FAIL2("fail(instance_accuracy): %0 != %1.", instance_accuracy, instance_accuracy_calc);
+	} else {
+		// difficult to precompute global values due to automatic deletion of chunks.
+		// make sure it's between the lower and upper.
+		auto upper = static_cast<int64_t>(std::atoll(supul->api.property.get_property("limit.chunk.instance_upper_bound", "0").c_str()));
+		auto lower = static_cast<int64_t>(std::atoll(supul->api.property.get_property("limit.chunk.instance_lower_bound", "0").c_str()));
+		if (not (lower or upper))												TEST_FAIL2("invalid lower, upper bound: %0, %1.", lower, upper);
+		if ((lower > upper) or (lower < 0) or (upper < 0))						TEST_FAIL2("invalid lower, upper bound: %0, %1.", lower, upper);
+		if (not ((lower <= instance_count) && (instance_count <= upper)))		TEST_FAIL3("not lower<=instance_count<=upper, %0 <= %1 <= %2.", lower, instance_count, upper);
+		if (instance_correct_count != expected_instance_correct_count)			TEST_FAIL2("fail(instance_correct_count): %0 != %1.", expected_instance_correct_count, instance_correct_count);
+	}
+	
 	// verify all.
 	auto& model = supul_tester(*supul).get_model();
 	model.verify_all();
@@ -244,6 +258,45 @@ inline void predict_test2(_in const std::string& projectname, _in int instances,
 	if (total_count != result.total_count) TEST_FAIL2("total_count(%0) != result.total_count(%1).", total_count, result.total_count);
 	if (initial_correct_count != result.correct_count) TEST_FAIL2("initial_correct_count(%0) != result.correct_count(%1).", initial_correct_count, result.correct_count);
 	gaenari::logger::info("predict_test2 count matched.");
+}
+
+// set_property test.
+inline void set_property_test(_in const std::string& projectname, _in const std::string& name, _in const std::string& value) {
+	// open project.
+	auto supul = open_supul_project_for_agrawal(projectname);
+
+	if (not supul->api.property.set_property(name, value)) TEST_FAIL1("fail to set_property(%0).", name);
+	if (not supul->api.property.save()) TEST_FAIL("fail to property save.");
+}
+
+inline void global_variable_test_int64(_in const std::string& projectname, _in const std::string& name, _in const int64_t expected_value) {
+	// open project.
+	auto supul = open_supul_project_for_agrawal(projectname);
+
+	// get db.
+	auto& db = supul_tester(*supul).get_db();
+
+	// get global.
+	auto g = db.get_global();
+
+	auto vi = supul::common::get_variant_int64(g, name);
+	if (vi == expected_value) return;
+	TEST_FAIL3("global value mis-match, name=%0, expected=%1, value=%2.", name, expected_value, vi);
+}
+
+inline void global_variable_test_double(_in const std::string& projectname, _in const std::string& name, _in const double expected_value) {
+	// open project.
+	auto supul = open_supul_project_for_agrawal(projectname);
+
+	// get db.
+	auto& db = supul_tester(*supul).get_db();
+
+	// get global.
+	auto g = db.get_global();
+
+	auto vd = supul::common::get_variant_double(g, name);
+	if (vd == expected_value) return;
+	TEST_FAIL3("global value mis-match, name=%0, expected=%1, value=%2.", name, expected_value, vd);
 }
 
 #endif // HEADER_UNIT_TEST_HPP

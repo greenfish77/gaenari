@@ -285,6 +285,8 @@ inline auto supul_t::api::misc::errmsg(void) const noexcept -> std::string {
 }
 
 // set property.
+// it is  function to store in cache memory.
+// call the save() to save configuration file.
 // do not write function logger.
 inline bool supul_t::api::property::set_property(_in const std::string& name, _in const std::string& value) noexcept {
 	try {
@@ -307,6 +309,30 @@ inline auto supul_t::api::property::get_property(_in const std::string& name, _i
 		api.errormsg = exceptions::catch_all();
 		gaenari::logger::error(api.errormsg);
 		return def;
+	}
+}
+
+// save set_property() to a configuration file.
+inline bool supul_t::api::property::save(void) noexcept {
+	try {
+		api.supul.prop.save();
+		return true;
+	} catch(...) {
+		api.errormsg = exceptions::catch_all();
+		gaenari::logger::error(api.errormsg);
+		return false;
+	}
+}
+
+// reload configuration file.
+inline bool supul_t::api::property::reload(void) noexcept {
+	try {
+		api.supul.prop.reload();
+		return true;
+	} catch(...) {
+		api.errormsg = exceptions::catch_all();
+		gaenari::logger::error(api.errormsg);
+		return false;
 	}
 }
 

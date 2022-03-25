@@ -388,6 +388,21 @@ inline const std::string& version(void) {
 	return v;
 }
 
+// the order of insert_order_map is not checked.
+// a simple (key, value) pair matching check.
+template<typename t1, typename t2>
+inline bool compare_map_content(_in const t1& m1, _in const t2& m2) {
+	if (m1.size() != m2.size()) return false;
+	for (const auto& it: m1) {
+		const auto& k = it.first;
+		const auto& v = it.second;
+		const auto& f = m2.find(k);
+		if (f == m2.end()) return false;
+		if (v != f->second) return false;
+	}
+	return true;
+}
+
 } // namespace common
 } // namespace gaenari
 

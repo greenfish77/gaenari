@@ -201,6 +201,7 @@ inline void sqlite_t::execute(_in stmt stmt_type, _in const type::vector_variant
 		}
 		sqlite3_reset(stmt.stmt);
 	} catch(...) {
+		exceptions::catch_all();
 		error = true;
 		sqlite3_reset(stmt.stmt);
 	}
@@ -358,7 +359,10 @@ inline auto sqlite_t::execute(_in stmt stmt_type, _in const type::vector_variant
 inline sqlite3_stmt* sqlite_t::get_stmt(_in const std::string& sql) {
 	sqlite3_stmt* stmt = nullptr;
 	int rc = sqlite3_prepare(this->db, sql.c_str(), -1, &stmt, nullptr);
-	if (rc != SQLITE_OK) THROW_SUPUL_DB_ERROR("fail to sqlite3_prepare.", error_desc(rc));
+	if (rc != SQLITE_OK) {
+		gaenari::logger::error("sql error: {0}", {sql});
+		THROW_SUPUL_DB_ERROR("fail to sqlite3_prepare.", error_desc(rc));
+	}
 	return stmt;
 }
 

@@ -78,7 +78,11 @@ public:
 		void update(void);
 		void rebuild(void);
 		auto predict(_in const type::map_variant& x) -> type::treenode_db;
+
+		// other functions of the model.
+		//   - call in the transaction.
 		void verify_all(void);
+		void remove_chunk(_in size_t chunk_id);
 
 		// internal functions.
 	protected:
@@ -95,6 +99,7 @@ public:
 		int64_t get_root_ref_treenode_id_from_cache(_in int64_t generation_id);
 		type::treenode_db& get_leaf_treenode_with_rule_add(_in _out type::predict_info& predict_info, _in const type::map_variant& instance, _out bool& added);
 		void update_generation_etc(_in int64_t generation_id, _in const type::map_variant& before_global, _in const int64_t weak_instance_count, _in const int64_t before_weak_instance_correct_count, _in const int64_t after_weak_instance_correct_count);
+		void chunk_limit(_in int64_t lower_bound, _in int64_t upper_bound);
 
 	protected:
 		supul_t& supul;
@@ -224,6 +229,8 @@ public:
 		struct property: public base {
 			bool set_property(_in const std::string& name, _in const std::string& value) noexcept;
 			auto get_property(_in const std::string& name, _in const std::string& def) noexcept -> std::string;
+			bool save(void) noexcept;
+			bool reload(void) noexcept;
 		} property;
 
 		// tests.

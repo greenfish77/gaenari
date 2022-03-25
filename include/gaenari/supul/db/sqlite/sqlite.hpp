@@ -45,6 +45,9 @@ public:
 	virtual auto    get_treenode(_in int64_t parent_treenode_id) -> std::vector<type::treenode_db>;
 	virtual void    update_instance_info(_in int64_t instance_id, _in int64_t ref_leaf_treenode_id, _in bool correct);
 	virtual void    update_chunk(_in int64_t chunk_id, _in bool updated, _in int64_t initial_correct_count, _in int64_t total_count, _in double initial_accuracy);
+	virtual void	update_chunk_total_count(_in int64_t chunk_id, _in int64_t total_count);
+	virtual void	get_chunk_list(_in callback_query cb);
+	virtual bool	get_chunk_updated(_in int64_t chunk_id);
 	virtual void    update_leaf_info(_in int64_t leaf_info_id, _in int64_t increment_correct_count, _in int64_t increment_total_count);
 	virtual auto    get_weak_treenode(_in double leaf_node_accuracy_upperbound, _in int64_t leaf_node_total_count_lowerbound) -> std::vector<int64_t>;
 	virtual void    update_leaf_info_by_go_to_generation_id(_in int64_t generation_id, _in double leaf_node_accuracy_upperbound, _in int64_t leaf_node_total_count_lowerbound);
@@ -55,6 +58,11 @@ public:
 	virtual int64_t copy_rule(_in int64_t src_rule_id);
 	virtual void    update_rule_value_integer(_in int64_t rule_id, _in int64_t value_integer);
 	virtual int64_t get_generation_id_by_treenode_id(_in int64_t treenode_id);
+	virtual void	get_leaf_info_by_chunk_id(_in int64_t chunk_id, _in callback_query cb);
+	virtual int64_t	get_total_count_by_chunk_id(_in int64_t chunk_id);
+	virtual void	delete_instance_by_chunk_id(_in int64_t chunk_id);
+	virtual void	delete_instance_info_by_chunk_id(_in int64_t chunk_id);
+	virtual void	delete_chunk_by_id(_in int64_t chunk_id);
 	virtual int64_t get_global_row_count(void);
 	virtual void    add_global_one_row(void);
 	virtual auto    get_global(void) -> type::map_variant;

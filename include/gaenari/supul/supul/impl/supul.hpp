@@ -22,8 +22,8 @@ inline void supul_t::create_project(_in const std::string& base_dir) {
 inline void supul_t::init(_in const std::string& base_dir) {
 	auto& version = gaenari::common::version();	// current version.
 	bool create_mode = false;					// create or open.
-	int ver = -1;
 	int property_update = false;
+	std::string ver;
 
 	gaenari::logger::info("start to supul init(version: {0}).", {version});
 	gaenari::logger::info("base_dir: {0}", {base_dir});
@@ -36,9 +36,12 @@ inline void supul_t::init(_in const std::string& base_dir) {
 
 	// read property version.
 	if (not prop.read(paths.property_txt, true)) create_mode = true;
-	ver = prop.get("ver", -1);
-	if (ver <= -1) create_mode = true;
-	else if (ver < std::stoi(version)) property_update = true;
+	ver = prop.get("ver", "");
+	if (ver.empty()) create_mode = true;
+	else if (common::is_version_update(ver, version)) {
+		gaenari::logger::info("update {0} -> {1}.", {ver, version});
+		property_update = true;
+	}
 
 	// check valid.
 	if (not common::check_valid_property(prop)) THROW_SUPUL_ERROR("invalid property file.");
@@ -48,15 +51,20 @@ inline void supul_t::init(_in const std::string& base_dir) {
 					"the higher value, the more aggresive rebuild, and the more complex the tree.";
 	auto comment2 = "it is weak when the number of treenode's instances is greater(>=) than this. "
 					"the lower value, the more aggresive rebuild, and the more complex the tree.";
+	auto comment3 = "if the total number of instances is greater than this, older chunks are removed.";
+	auto comment4 = "minimum number of instances to keep.";
 
 	// set default property with comment.
 	if (create_mode or property_update) {
-		prop.set_default({{"ver",										version.c_str(),		"supul configuration."}});
+		prop.set		(  "ver",										version.c_str(),		"supul configuration.");
 		prop.set_default({{"db.type",									"{choose one}",			"supported db type : sqlite."}});
 		prop.set_default({{"db.dbname",									"supul",				"set default database name."}});
 		prop.set_default({{"db.tablename.prefix",						"",						"set table name prefix."}});
 		prop.set_default({{"model.weak_treenode_condition.accuracy",	"0.8",					comment1}});
 		prop.set_default({{"model.weak_treenode_condition.total_count",	"5",					comment2}});
+		prop.set_default({{"limit.chunk.use",							"false",				"use chunk instance size limit."}});
+		prop.set_default({{"limit.chunk.instance_upper_bound",			"2000000",				comment3}});
+		prop.set_default({{"limit.chunk.instance_lower_bound",			"1000000",				comment4}});
 		if (not prop.save()) THROW_SUPUL_ERROR("fail to save property file.");
 	}
 

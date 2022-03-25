@@ -359,7 +359,7 @@ public:
 
 	bool reload(void) {
 		std::string p = this->_path;
-		return read(p);
+		return read(p, true);
 	}
 
 	bool all_keys_existed(_in const std::vector<std::string>& names) const {

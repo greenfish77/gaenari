@@ -112,8 +112,20 @@ inline void supul_t::model::insert_chunk_csv(_in const std::string& csv_file_pat
 	// close csv.
 	csv.close();
 
+	// update total count.
+	get_db().update_chunk_total_count(chunk_id, row_count);
+
 	// set global.
 	get_db().set_global({{"instance_count", static_cast<int64_t>(row_count)}}, true);
+
+	// auto limit chunk?
+	supul.prop.reload();
+	auto use = supul.prop.get("limit.chunk.use", false);
+	if (use) {
+		auto lower_bound = supul.prop.get("limit.chunk.instance_lower_bound", 0LL);
+		auto upper_bound = supul.prop.get("limit.chunk.instance_upper_bound", 0LL);
+		chunk_limit(lower_bound, upper_bound);
+	}
 
 	// transaction commit.
 	transaction.commit();
@@ -1154,6 +1166,153 @@ inline void supul_t::model::update_generation_etc(_in int64_t generation_id, _in
 	// update.
 	get_db().update_generation_etc(generation_id, instance_count, weak_instance_count, weak_instance_ratio, before_weak_instance_accuracy, 
 								   after_weak_instance_accuracy, before_instance_accuracy, after_instance_accuray);
+}
+
+inline void supul_t::model::chunk_limit(_in int64_t lower_bound, _in int64_t upper_bound) {
+	std::vector<int64_t> chunk_ids_to_remove;
+
+	if (lower_bound > upper_bound) THROW_SUPUL_ERROR2("invalid bound, %0, %1.", lower_bound, upper_bound);
+	if (upper_bound <= 0) THROW_SUPUL_ERROR1("invalid upper bound, %1.", upper_bound);
+	auto g = get_db().get_global();
+	auto instance_count = common::get_variant_int64(g, "instance_count");
+	if (instance_count <= upper_bound) {
+		// under upper_bound. do nothing...
+		return;
+	}
+
+	// do chunk remove.
+	gaenari::logger::warn("chunk limit, instance_count={0}, upper_bound={1}.", {instance_count, upper_bound});
+
+	// remove chunks till lower_bound.
+	// get chunk information in oldest order.
+	get_db().get_chunk_list([&](const auto& row) -> bool {
+		// get chunk id, total_count.
+		auto chunk_id = common::get_variant_int64(row, "id");
+		auto chunk_total_count = common::get_variant_int64(row, "total_count");
+
+		if (instance_count - chunk_total_count < lower_bound) {
+			// remove stop.
+			return false;
+		}
+
+		// do not remove here.
+		// query is in progress.
+		// to support databases that do not support delete-while-query.
+		chunk_ids_to_remove.emplace_back(chunk_id);
+		instance_count -= chunk_total_count;
+		if (instance_count < 0) THROW_SUPUL_INTERNAL_ERROR0;
+
+		return true;
+	});
+
+	gaenari::logger::info("chunk_id to be removed: {0}.", {gaenari::common::vec_to_string(chunk_ids_to_remove)});
+
+	// delete chunks.
+	for (const auto& chunk_id: chunk_ids_to_remove) {
+		remove_chunk(chunk_id);
+	}
+
+	// get global after remove.
+	auto g1 = get_db().get_global();
+	auto instance_count1 = common::get_variant_int64(g1, "instance_count");
+	if (not ((lower_bound <= instance_count1) && (instance_count1 < upper_bound))) {
+		// not removed?
+		THROW_SUPUL_INTERNAL_ERROR0;
+	}
+
+	if (instance_count != instance_count1) {
+		THROW_SUPUL_ERROR2("instance_count not matched, calc=%0, global=%1.", instance_count, instance_count1);
+	}
+}
+
+inline void supul_t::model::remove_chunk(_in size_t chunk_id) {
+	int64_t correct = 0;
+	int64_t total = 0;
+	int64_t total_weak_count = 0;
+	std::map<int64_t, std::map<int64_t, int64_t>> cm;	// confusion_matrix update.	(cm[actual][predicted]=count)
+	std::unordered_map<int64_t, int64_t> leaf_info_id_count;
+	std::unordered_map<int64_t, int64_t> leaf_info_id_correct_count;
+	auto& db = get_db();
+
+	// get the evaluation result of a target chunk. subtract the value later.
+	db.get_leaf_info_by_chunk_id(chunk_id, [&](const auto& row) -> bool {
+		// leaf_info_id_count update.
+		auto id = common::get_variant_int64(row, "id");
+		leaf_info_id_count[id]++;
+
+		// for confusion matrix update.
+		auto actual    = common::get_variant_int64(row, "instance.actual");
+		auto predicted = common::get_variant_int64(row, "label_index");
+		cm[actual][predicted]++;
+		if (actual == predicted) { 
+			correct++;
+			leaf_info_id_correct_count[id]++;
+		}
+		
+		total++;
+		total_weak_count += common::get_variant_int64(row, "instance_info.weak_count");
+		return true;
+	});
+
+	// the chunk is updated?
+	auto updated = db.get_chunk_updated(chunk_id);
+
+	// total count check.
+	auto total_count = db.get_total_count_by_chunk_id(chunk_id);
+	int64_t updated_count = 0;
+	if (updated) {
+		if (total_count != total) THROW_SUPUL_ERROR2("total count mis-matching, %0 != %1.", total_count, total);
+		updated_count = total_count;
+	}
+
+	// update global confusion matrix.
+	for (const auto& it1: cm) {
+		const auto& actual = it1.first;
+		for (const auto& it2: it1.second) {
+			const auto& predicted = it2.first;
+			const auto& increment = it2.second;
+			db.update_global_confusion_matrix_item_increment(actual, predicted, -increment);
+		}
+	}
+
+	// update leaf_info.
+	for (const auto& it: leaf_info_id_count) {
+		auto& id = it.first;
+		auto& count = it.second;
+		db.update_leaf_info(id, -leaf_info_id_correct_count[id], -leaf_info_id_count[id]);
+	}
+
+	// get global.
+	auto g = db.get_global();
+	int64_t g_instance_count = common::get_variant_int64(g, "instance_count") - total_count;
+	int64_t g_updated_instance_count  = common::get_variant_int64(g, "updated_instance_count") - updated_count;
+	int64_t g_instance_correct_count  = common::get_variant_int64(g, "instance_correct_count") - correct;
+	int64_t g_acc_weak_instance_count = common::get_variant_int64(g, "acc_weak_instance_count") - total_weak_count;
+	double g_instance_accuracy = 0.0;
+	if (g_updated_instance_count != 0) {
+		g_instance_accuracy = static_cast<double>(g_instance_correct_count) / static_cast<double>(g_updated_instance_count);
+	}
+
+	// error?
+	if ((g_instance_count < 0) or (g_updated_instance_count < 0) or (g_instance_correct_count < 0) or (g_acc_weak_instance_count < 0))
+		THROW_SUPUL_INTERNAL_ERROR0;
+
+	// update global.
+	db.set_global({
+		{"instance_count",			g_instance_count},
+		{"updated_instance_count",	g_updated_instance_count},
+		{"instance_correct_count",	g_instance_correct_count},
+		{"acc_weak_instance_count",	g_acc_weak_instance_count},
+		{"instance_accuracy",		g_instance_accuracy}
+	});
+
+	// delete records(call order is important).
+	db.delete_instance_by_chunk_id(chunk_id);
+	db.delete_instance_info_by_chunk_id(chunk_id);
+	db.delete_chunk_by_id(chunk_id);
+
+	// some leaf_info changed, so clear all cache.
+	clear_all_cache();
 }
 
 } // supul

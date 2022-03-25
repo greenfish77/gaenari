@@ -17,6 +17,7 @@ std::string temp_dir;
 #include "test_logger.hpp"
 #include "testcase.hpp"
 #include "testscenario.hpp"
+#include "develop_util.hpp"
 #include "_develop.hpp"
 
 int main(int argc, const char** argv) try
@@ -42,9 +43,10 @@ int main(int argc, const char** argv) try
 
 	// do test.
 	for (const auto& scenario_name: scenario_names) {
-		if		(scenario_name == "default")	scenario_default("default");
-		else if (scenario_name == "large")		scenario_largesize("large");
-		else if (scenario_name == "predict")	scenario_predict("predict");
+		if		(scenario_name == "default")		scenario_default("default");
+		else if (scenario_name == "large")			scenario_largesize("large");
+		else if (scenario_name == "predict")		scenario_predict("predict");
+		else if (scenario_name == "limit_chunk")	scenario_limit_chunk("limit_chunk");
 		else	TEST_FAIL1("invalid scenario name: %0", scenario_name);
 	}
 

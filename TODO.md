@@ -15,7 +15,6 @@ TODO
 - [ ] cache synchronization.
 - [ ] event log.
 - [ ] avoid hard-coded train options.
-- [ ] reducing the number of instances in the DB (or limit size).
 - [ ] reducing the size of model in the DB (or limit size).
 - [ ] support other databases(postgresql, ...).
 - [ ] tree model to json.
@@ -23,8 +22,9 @@ TODO
 ### In Progress
 
 ### Done ✓
-##### 1.0.0.0
+##### 1.0
 - [X] first release.
-
+##### 1.1
+- [X] reducing the number of instances in the DB (or limit size).
 ### abandoned
 - [ ] ~~nothing~~
