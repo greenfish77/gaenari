@@ -525,7 +525,9 @@ inline bool is_version_update(_in const std::string& cur, _in const std::string&
 	gaenari::dataset::csv_reader::parse_delim(next,'.', next_items);
 
 	// set four items.
-	if (cur_items.size() == 3)  cur_items.emplace_back("0");
+	if (cur_items.size()  == 2) cur_items.emplace_back("0");
+	if (next_items.size() == 2) next_items.emplace_back("0");
+	if (cur_items.size()  == 3) cur_items.emplace_back("0");
 	if (next_items.size() == 3) next_items.emplace_back("0");
 
 	// valid check.
