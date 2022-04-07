@@ -58,13 +58,13 @@
 # wrapper/build$ cmake ..
 # wrapper/build$ cmake --build . --config release
 
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.18)
 
 ##########
 # settings
 ##########
 # project.
-project(gaenari VERSION 1.1)
+project(gaenari VERSION 1.2)
 
 #################################
 # auto git ignore build directory
