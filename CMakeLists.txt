@@ -84,7 +84,8 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/gaenari_util.cmake")
 set(_SQLITE_SHA256_     "999826FE4C871F18919FDB8ED7EC9DD8217180854DD1FE21EEA96AED36186729")
 set(SQLITE_VERSION      "3360000"           CACHE STRING "sqlite version to build. minimum(3350400(=3.35.5) for supporting `returning`)")
 set(SQLITE_RELEASE_YEAR "2021"              CACHE STRING "release year of SQLITE_VERSION.")
-set(SQLITE_SHA256        ${_SQLITE_SHA256_} CACHE STRING "sha256 value of sqlite.zip.")
+set(SQLITE_SHA256       ${_SQLITE_SHA256_}  CACHE STRING "sha256 value of sqlite.zip.")
+set(BUILD_WEB           true                CACHE BOOL   "build web-console.")   
 
 ##################
 # global variables
@@ -131,6 +132,11 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/extern/sqlite")
 
 # add tests target to build.
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/tests")
+
+# add web console target to build.
+if(BUILD_WEB)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/gaenari-web")
+endif()
 
 # add files target to edit some files in IDE.
 add_custom_target(files SOURCES 
