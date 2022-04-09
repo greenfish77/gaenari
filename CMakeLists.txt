@@ -165,3 +165,6 @@ enable_testing()
 #########
 # add gaenari header files to install directory.
 install(DIRECTORY "${GAENARI_INCLUDE_DIR}" DESTINATION include)
+if(BUILD_WEB)
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/gaenari-web/web-root" DESTINATION bin)
+endif()
