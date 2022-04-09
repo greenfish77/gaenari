@@ -91,13 +91,16 @@ set(BUILD_WEB           true                CACHE BOOL   "build web-console.")
 # global variables
 ##################
 # download directory.
-set(DOWNLOAD_DIR        "${CMAKE_CURRENT_BINARY_DIR}/download")
+set(DOWNLOAD_DIR            "${CMAKE_CURRENT_BINARY_DIR}/download")
 
 # gaenari include directory.
-set(GAENARI_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/")
+set(GAENARI_INCLUDE_DIR     "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 
 # sqlite include directory.
-set(SQLITE_INCLUDE_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/extern/sqlite")
+set(SQLITE_INCLUDE_DIR      "${CMAKE_CURRENT_SOURCE_DIR}/extern/sqlite")
+
+# cpp-httplib(0.10.4) for web console.
+set(CPP_HTTPLIB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extern/cpp-httplib-0.10.4")
 
 # gaenari hpp files.
 # gaenari has only header files.

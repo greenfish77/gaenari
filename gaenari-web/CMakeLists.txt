@@ -28,6 +28,7 @@ endif()
 target_include_directories(gaenari-web PRIVATE 
     ${GAENARI_INCLUDE_DIR}
     ${SQLITE_INCLUDE_DIR}
+    ${CPP_HTTPLIB_INCLUDE_DIR}
 )
 
 # link.
