@@ -6,15 +6,15 @@ PROJECT(gaenari-web)
 # sqlite uses threads.
 find_package(Threads REQUIRED)
 
-# *.hpp files in gaenari-web.
-file(GLOB_RECURSE GAENARI_WEB_HPP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp")
-
 # only one gaenari-web.cpp files.
-# *.hpp files in gaenari-web and gaenari are added for IDE tools, not compilation.
-set(GAENARI_WEB_SOURCES gaenari-web.cpp ${GAENARI_WEB_HPP_FILES} ${GAENARI_HPP_FILES})
+# *.hpp files in gaenari and web-root are added for IDE tools, not compilation.
+file(GLOB_RECURSE GAENARI_WEB_HPP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp")
+file(GLOB_RECURSE WEB_ROOT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/web-root/*.*")
+set(GAENARI_WEB_SOURCES gaenari-web.cpp ${GAENARI_WEB_HPP_FILES} ${GAENARI_HPP_FILES} ${WEB_ROOT_FILES})
 
-# in IDE tools, the gaenari header files are represented as a directory structure.
+# in IDE tools, some files are represented as a directory structure.
 source_group(TREE ${GAENARI_INCLUDE_DIR} FILES ${GAENARI_HPP_FILES})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${WEB_ROOT_FILES})
 
 # add the executable.
 add_executable(gaenari-web ${GAENARI_WEB_SOURCES})
