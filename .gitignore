@@ -4,6 +4,9 @@ include/gaenari/gaenari-config.h
 # ignore downloaded sqlite sources.
 extern/sqlite/sqlite/*
 
+# ignore downladed web components.
+gaenari-web/web-root/www/extern/*
+
 # write '*' in .gitignore to ignore the cmake build directory in repo.
 # do it in root CMakeFiles.txt.
 # do nothing.

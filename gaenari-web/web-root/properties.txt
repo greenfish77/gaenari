@@ -1,0 +1,9 @@
+# gaenari-web configurations.
+
+# set directories.
+www_dir  = ${base_dir}/www
+data_dir = ${base_dir}/data
+
+# http server options.
+host     = 127.0.0.1
+port     = 80

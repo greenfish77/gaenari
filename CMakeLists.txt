@@ -82,10 +82,13 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/gaenari_util.cmake")
 # options
 #########
 set(_SQLITE_SHA256_     "999826FE4C871F18919FDB8ED7EC9DD8217180854DD1FE21EEA96AED36186729")
+set(_ADMLTE_SHA256_     "74AD6048947B00399C4F35B64CD53D0497E59A0C05CC7B2248AE065F933FF39F")
 set(SQLITE_VERSION      "3360000"           CACHE STRING "sqlite version to build. minimum(3350400(=3.35.5) for supporting `returning`)")
 set(SQLITE_RELEASE_YEAR "2021"              CACHE STRING "release year of SQLITE_VERSION.")
 set(SQLITE_SHA256       ${_SQLITE_SHA256_}  CACHE STRING "sha256 value of sqlite.zip.")
-set(BUILD_WEB           true                CACHE BOOL   "build web-console.")   
+set(BUILD_WEB           true                CACHE BOOL   "build web-console.")
+set(ADMINLTE_VERSION    "3.2.0"             CACHE STRING "AdminLTE version to use.")
+set(ADMINLTE_SHA256     ${_ADMLTE_SHA256_}  CACHE STRING "sha256 value of adminlte.zip.")
 
 ##################
 # global variables

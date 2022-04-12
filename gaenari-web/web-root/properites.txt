@@ -1,5 +1,0 @@
-# gaenari-web configurations.
-
-# set directories.
-dir_www  = ${cd}/www
-dir_data = ${cd}/data
