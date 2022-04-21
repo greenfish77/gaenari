@@ -819,7 +819,7 @@ public:
 			block = utf8_json_block;
 		} else {
 			// assume that the cost of copy path is small.
-			auto target_block_path = target_path;
+			std::vector<path_object> target_block_path = target_path;
 			target_value_path = {target_block_path.back()};
 			target_block_path.pop_back();
 

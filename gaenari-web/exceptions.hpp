@@ -18,11 +18,11 @@ public:
 };
 
 // throw macro.
-#define ERROR0(text)				throw error(text,												PRETTY_FUNCTION, __FILE__, __LINE__)
+#define ERROR0(text)				throw error(text,													PRETTY_FUNCTION, __FILE__, __LINE__)
 #define ERROR1(text, a)				throw error(gaenari::common::f(text, {(a)}),						PRETTY_FUNCTION, __FILE__, __LINE__)
-#define ERROR2(text, a, b)			throw error(gaenari::common::f(text, {(a), (b)}),				PRETTY_FUNCTION, __FILE__, __LINE__)
-#define ERROR3(text, a, b, c)		throw error(gaenari::common::f(text, {(a), (b), (c)}),			PRETTY_FUNCTION, __FILE__, __LINE__)
-#define ERROR4(text, a, b, c, d)	throw error(gaenari::common::f(text, {(a), (b), (c), (d)}),		PRETTY_FUNCTION, __FILE__, __LINE__)
+#define ERROR2(text, a, b)			throw error(gaenari::common::f(text, {(a), (b)}),					PRETTY_FUNCTION, __FILE__, __LINE__)
+#define ERROR3(text, a, b, c)		throw error(gaenari::common::f(text, {(a), (b), (c)}),				PRETTY_FUNCTION, __FILE__, __LINE__)
+#define ERROR4(text, a, b, c, d)	throw error(gaenari::common::f(text, {(a), (b), (c), (d)}),			PRETTY_FUNCTION, __FILE__, __LINE__)
 #define ERROR5(text, a, b, c, d, e)	throw error(gaenari::common::f(text, {(a), (b), (c), (d), (e)}),	PRETTY_FUNCTION, __FILE__, __LINE__)
 
 #endif // HEADER_EXCEPTIONS_HPP

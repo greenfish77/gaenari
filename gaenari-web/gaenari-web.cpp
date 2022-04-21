@@ -31,18 +31,32 @@ int main(void) try {
 	httplib::Server svr;
 
 	// static file server.
-	if (not svr.set_mount_point("/", path.www_dir)) ERROR0("fail to set_mount_point.");
+	if (not svr.set_mount_point("/www", path.www_dir)) ERROR0("fail to set_mount_point.");
 
 	// set logger.
 	svr.set_logger([](const httplib::Request& req, const httplib::Response& res) {
 		gaenari::logger::info("[http] {0} {1} -> status:{2}", {req.method, req.path, res.status});
 	});
 
+	// set exception handler.
+	svr.set_exception_handler([](const auto& req, auto& res, std::exception& e) {
+		std::string w = e.what();
+		gaenari::logger::error("<red>fail</red>: <yellow>" + w + "</yellow>", true);
+		res.status = 500;
+		std::string content = "<h1>Internal Server Error 500</h1><p>" + w + "</p>";
+		res.set_content(content, "text/html");
+	});
+
 	svr.set_pre_routing_handler([](const httplib::Request& req, httplib::Response& res) {
-		// set redirect / -> /project.html
+		// set redirect / -> /index.html or /create_project.html
 		if (req.path == "/") {
 			res.status = 302; // temporarily.
-			res.set_redirect("/project.html");
+			// the redirect depends on whether the project exists or not.
+			if (util::get_config_status("project_created", false)) {
+				res.set_redirect("/www/index.html");				
+			} else {
+				res.set_redirect("/www/create_project.html");
+			}
 			return httplib::Server::HandlerResponse::Handled;
 		}
 		return httplib::Server::HandlerResponse::Unhandled;
@@ -50,8 +64,8 @@ int main(void) try {
 
 	svr.set_file_request_handler([](const httplib::Request& req, httplib::Response& res) {
 		if (0) {
-			res.location = "/index.html";
-			res.body = "/index.html";
+			res.location = "/www/index.html";
+			res.body = "/www/index.html";
 			res.status = 302;
 			return;
 		}
@@ -59,9 +73,15 @@ int main(void) try {
 		// res.content_length_ = 4;
 	});
 
+	svr.Post("/api/v1/project", [](const httplib::Request& req, httplib::Response& res) {
+		// res.set_content("Hello World!", "text/plain");
+		res.status = 302; // temporarily.
+		res.set_redirect("/");
+	});
+
 	svr.Get("/hi", [](const httplib::Request&, httplib::Response& res) {
 		res.set_content("Hello World!", "text/plain");
-		});
+	});
 
 	svr.listen(option.server.host.c_str(), option.server.port);
 } catch(const error& e) {

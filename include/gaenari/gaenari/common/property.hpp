@@ -179,7 +179,7 @@ struct prop {
 		}
 
 		void set(_in const std::string& v) {
-			auto s = v;
+			std::string s = v;
 			set_move(s);
 		}
 	};
