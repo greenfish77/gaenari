@@ -6,6 +6,7 @@ struct path_t {
 	std::string log_file_path;
 	std::string www_dir;
 	std::string data_dir;
+	std::string project_dir;
 };
 
 struct option_t {

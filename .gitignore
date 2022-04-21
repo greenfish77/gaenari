@@ -6,6 +6,7 @@ extern/sqlite/sqlite/*
 
 # ignore downladed web components.
 gaenari-web/web-root/www/extern/*
+!gaenari-web/web-root/www/extern/fonts
 
 # write '*' in .gitignore to ignore the cmake build directory in repo.
 # do it in root CMakeFiles.txt.

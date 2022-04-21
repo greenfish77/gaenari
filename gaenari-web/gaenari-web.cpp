@@ -41,6 +41,7 @@ int main(void) try {
 	svr.set_pre_routing_handler([](const httplib::Request& req, httplib::Response& res) {
 		// set redirect / -> /project.html
 		if (req.path == "/") {
+			res.status = 302; // temporarily.
 			res.set_redirect("/project.html");
 			return httplib::Server::HandlerResponse::Handled;
 		}
