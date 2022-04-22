@@ -7,6 +7,9 @@ struct util {
 	inline static void show_properties(void);
 	inline static std::string get_env(_in const std::string& name);
 	inline static std::string get_property_file_path(void);
+	inline static bool is_alnum(_in const std::string& s);
+	inline static bool is_path_extension(_in const std::string& path, _in const std::string& extension);
+
 	template<typename T>
 	inline static T get_config_status(_in const std::string& name, _in const T& def);
 };
@@ -100,6 +103,29 @@ inline T util::get_config_status(_in const std::string& name, _in const T& def) 
 	gaenari::common::prop p;
 	if (not p.read(path.config_status)) return def;
 	return p.get(name, def);
+}
+
+inline bool util::is_alnum(_in const std::string& s) {
+	return std::all_of(s.begin(), s.end(), [](char const &c) {
+		return std::isalnum(c);
+	});
+}
+
+// ex) path      : "/www/index.html"
+//     extension : "html"
+//     return true
+inline bool util::is_path_extension(_in const std::string& path, _in const std::string& extension) {
+	if (path.length() <= extension.length()) return false;
+	if (not is_alnum(extension)) ERROR1("invalid extension: %0.", extension);
+	int elength = static_cast<int>(extension.length());
+	int plength = static_cast<int>(path.length());
+	auto p = path.c_str();
+	auto e = extension.c_str();
+	if (p[plength-elength-1] != '.') return false;
+	for (int i=0; i<elength; i++) {
+		if (::tolower(p[plength-elength+i] != ::tolower(e[i]))) return false;
+	}
+	return true;
 }
 
 #endif // HEADER_UTIL_HPP
