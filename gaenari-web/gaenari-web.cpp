@@ -74,6 +74,19 @@ int main(void) try {
 	});
 
 	svr.Post("/api/v1/project", [](const httplib::Request& req, httplib::Response& res) {
+		// req.params["database_type"]	= "sqlite"
+		// req.params["index0"]			= "attrib_1/INTEGER/X"
+		// ...
+		// req.params["index5"]			= "attrib_5/TEXT_ID/Y"
+		// req.params["project_name"]	= "prj_name"
+		// remark 1) attribute name / data type / selection(X, Y and blank)
+		// remark 2) n of indexn such as index0, index1, ... may not start from 0,
+		//           or may not be contiguous.
+		
+		// valid check.
+		util::check_map_has_keys(req.params, {"database_type", "project_name"});
+
+
 		// res.set_content("Hello World!", "text/plain");
 		res.status = 302; // temporarily.
 		res.set_redirect("/");

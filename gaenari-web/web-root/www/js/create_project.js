@@ -8,7 +8,7 @@ var attribute_names = {};
 function on_submit() {
     // validate before submit.
     var toast_msg;
-    if (count_x <= 2) toast_msg = 'Minimum 3 or more X required.';
+    if (count_x <= 1) toast_msg = 'Minimum 2 or more X required.';
     if (count_y != 1) toast_msg = 'One Y required.';
     if (toast_msg) {
         $(document).Toasts('create', {

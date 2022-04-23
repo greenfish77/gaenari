@@ -12,6 +12,9 @@ struct util {
 
 	template<typename T>
 	inline static T get_config_status(_in const std::string& name, _in const T& def);
+
+	template<typename T>
+	inline static void check_map_has_keys(_in const T& m, _in const std::vector<std::string>& k);
 };
 
 inline std::string util::get_env(_in const std::string& name) {
@@ -126,6 +129,21 @@ inline bool util::is_path_extension(_in const std::string& path, _in const std::
 		if (::tolower(p[plength-elength+i] != ::tolower(e[i]))) return false;
 	}
 	return true;
+}
+
+template<typename T>
+inline void util::check_map_has_keys(_in const T& m, _in const std::vector<std::string>& k) {
+	std::string msg;
+	if (k.empty()) return;
+	for (const auto& i: k) {
+		auto find = m.find(i);
+		if (find == m.end()) msg += i + ", ";
+	}
+	if (not msg.empty()) {
+		msg.pop_back();
+		msg.pop_back();
+		ERROR1("keys not found: %0.", msg);
+	}
 }
 
 #endif // HEADER_UTIL_HPP
