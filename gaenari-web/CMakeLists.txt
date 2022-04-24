@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
 
 # set the project.
-PROJECT(gaenari-web)
+PROJECT(gaenari-web VERSION 1.0)
 
 # sqlite uses threads.
 find_package(Threads REQUIRED)
@@ -24,9 +24,12 @@ execute_process(COMMAND "${CMAKE_COMMAND}" -E tar xzf "${DOWNLOAD_DIR}/AdminLTE-
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/web-root/www/extern"
 )
 
+# configure.
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/gaenari-web-config.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/gaenari-web-config.h")
+
 # only one gaenari-web.cpp files.
 # *.hpp files in gaenari and web-root are added for IDE tools, not compilation.
-file(GLOB_RECURSE GAENARI_WEB_HPP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp")
+file(GLOB_RECURSE GAENARI_WEB_HPP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp" "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 file(GLOB_RECURSE WEB_ROOT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/web-root/*.*")
 list(FILTER WEB_ROOT_FILES EXCLUDE REGEX "/www/extern/")
 set(GAENARI_WEB_SOURCES gaenari-web.cpp ${GAENARI_WEB_HPP_FILES} ${GAENARI_HPP_FILES} ${WEB_ROOT_FILES})

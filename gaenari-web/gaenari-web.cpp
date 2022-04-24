@@ -1,3 +1,4 @@
+#include "gaenari-web-config.h"
 #include "gaenari/gaenari.hpp"
 #include "cpp-httplib/httplib.h"
 #include "type.hpp"
@@ -52,7 +53,7 @@ int main(void) try {
 		if (req.path == "/") {
 			res.status = 302; // temporarily.
 			// the redirect depends on whether the project exists or not.
-			if (util::get_config_status("project_created", false)) {
+			if (util::get_config("project_created", false)) {
 				res.set_redirect("/www/index.html");				
 			} else {
 				res.set_redirect("/www/create_project.html");
@@ -125,8 +126,8 @@ int main(void) try {
 		if (not supul_t::api::project::y(path.project_dir, y)) ERROR0("fail to set project y.");
 
 		// create_project completed.
-		util::set_config_status("project_created", "true");
-		util::set_config_status("project_name", project_name);
+		util::set_config("project_created", "true");
+		util::set_config("project_name", project_name);
 
 		// go to index.html.
 		res.status = 302; // temporarily.

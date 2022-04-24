@@ -1,5 +1,6 @@
 # ignore cmake configured file.
 include/gaenari/gaenari-config.h
+gaenari-web/gaenari-web-config.h
 
 # ignore downloaded sqlite sources.
 extern/sqlite/sqlite/*

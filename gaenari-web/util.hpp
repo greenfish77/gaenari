@@ -10,9 +10,10 @@ struct util {
 	inline static bool is_alnum(_in const std::string& s);
 	inline static bool is_path_extension(_in const std::string& path, _in const std::string& extension);
 
+	inline static void initialize_config(void);
+	inline static void set_config(_in const std::string& name, _in const std::string& value);
 	template<typename T>
-	inline static T get_config_status(_in const std::string& name, _in const T& def);
-	inline static void set_config_status(_in const std::string& name, _in const std::string& value);
+	inline static T get_config(_in const std::string& name, _in const T& def);
 
 	template<typename T>
 	inline static void check_map_has_keys(_in const T& m, _in const std::vector<std::string>& k);
@@ -72,15 +73,12 @@ inline void util::initialize(void) {
 	if (not tmp.empty()) path.data_dir = tmp;
 	path.project_dir = supul::common::path_join_const(path.data_dir, "project");
 	path.config_dir = supul::common::path_join_const(path.data_dir, "config");
-	path.config_status = supul::common::path_join_const(path.config_dir, "status.txt");
+	path.config_file_path = supul::common::path_join_const(path.config_dir, "config.txt");
 
 	// mkdir.
 	std::filesystem::create_directories(path.data_dir);
 	std::filesystem::create_directories(path.project_dir);
 	std::filesystem::create_directories(path.config_dir);
-
-	// empty file.
-	if (not std::filesystem::exists(path.config_status)) gaenari::common::save_to_file(path.config_status, "");
 
 	// set log.
 	path.log_file_path = supul::common::path_join_const(path.data_dir, "log");
@@ -105,18 +103,33 @@ inline void util::show_properties(void) {
 	gaenari::logger::info("- port                 : {0}", {option.server.port});
 }
 
-template<typename T>
-inline T util::get_config_status(_in const std::string& name, _in const T& def) {
+inline void util::initialize_config(void) {
 	gaenari::common::prop p;
-	if (not p.read(path.config_status)) return def;
-	return p.get(name, def);
+	
+	// empty file.
+	gaenari::common::save_to_file(path.config_file_path, "");
+
+	// info.
+	p.set("gaenari_lib_version", supul::supul::supul_t::api::misc::version());
+	p.set("gaenari_web_version", GAENARI_WEB_VERSION);
+	p.set("initialize_time", gaenari::common::current_yyyymmddhhmmss());
+	p.save(path.config_file_path);
 }
 
-inline void util::set_config_status(_in const std::string& name, _in const std::string& value) {
+inline void util::set_config(_in const std::string& name, _in const std::string& value) {
 	gaenari::common::prop p;
-	if (not p.read(path.config_status)) ERROR0("fail to set_config_status.");
+
+	if (not std::filesystem::exists(path.config_file_path)) initialize_config();
+	if (not p.read(path.config_file_path)) ERROR1("fail to read %0.", path.config_file_path);
 	p.set(name, value);
 	p.save();
+}
+
+template<typename T>
+inline T util::get_config(_in const std::string& name, _in const T& def) {
+	gaenari::common::prop p;
+	if (not p.read(path.config_file_path)) return def;
+	return p.get(name, def);
 }
 
 inline bool util::is_alnum(_in const std::string& s) {

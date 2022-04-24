@@ -8,7 +8,7 @@ struct path_t {
 	std::string data_dir;
 	std::string project_dir;
 	std::string config_dir;
-	std::string config_status;
+	std::string config_file_path;
 };
 
 struct option_t {
