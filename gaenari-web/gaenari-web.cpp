@@ -84,10 +84,51 @@ int main(void) try {
 		//           or may not be contiguous.
 		
 		// valid check.
-		util::check_map_has_keys(req.params, {"database_type", "project_name"});
+		util::check_map_has_keys(req.params, {"project_name", "database_type"});
+		if (req.params.size() <= 4) ERROR0("not enough parameters.");
 
+		// get data.
+		std::string project_name;
+		std::string database_type;
+		std::vector<std::string> attributes;
+		for (const auto& it: req.params) {
+			const auto& name  = it.first;
+			const auto& value = it.second;
+			if (name == "project_name")  { project_name  = value; continue; }
+			if (name == "database_type") { database_type = value; continue; }
+			if (strncmp(name.c_str(), "index", 5) != 0) ERROR1("unknown parameter name: %0.", name);
+			attributes.emplace_back(value);
+		}
 
-		// res.set_content("Hello World!", "text/plain");
+		// create project and set data.
+		using supul_t = supul::supul::supul_t;
+		if (not supul_t::api::project::create(path.project_dir)) ERROR0("fail to create project.");
+		if (not supul_t::api::project::set_property(path.project_dir, "db.type", database_type)) ERROR0("fail to set database type.");
+		std::vector<std::string> x;
+		std::string y;
+		for (const auto& attribute: attributes) {
+			std::vector<std::string> items;
+			gaenari::dataset::csv_reader::parse_delim(attribute, '/', items);
+			if (items.size() != 3) ERROR1("invalid attribute data: %0.", attribute);
+			const auto& name = items[0];
+			const auto& type = items[1];
+			const auto& sel  = items[2];
+			if (name.empty() or type.empty()) ERROR1("invalid attribute data: %0.", attribute);
+			if (not supul_t::api::project::add_field(path.project_dir, name, type)) ERROR1("fail to add_field, %0.", attribute);
+			if (sel == "X") x.emplace_back(name);
+			else if (sel == "Y") {
+				if (not y.empty()) ERROR0("already used y.");
+				y = name;
+			}
+		}
+		if (not supul_t::api::project::x(path.project_dir, x)) ERROR0("fail to set project x.");
+		if (not supul_t::api::project::y(path.project_dir, y)) ERROR0("fail to set project y.");
+
+		// create_project completed.
+		util::set_config_status("project_created", "true");
+		util::set_config_status("project_name", project_name);
+
+		// go to index.html.
 		res.status = 302; // temporarily.
 		res.set_redirect("/");
 	});

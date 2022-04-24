@@ -12,6 +12,7 @@ struct util {
 
 	template<typename T>
 	inline static T get_config_status(_in const std::string& name, _in const T& def);
+	inline static void set_config_status(_in const std::string& name, _in const std::string& value);
 
 	template<typename T>
 	inline static void check_map_has_keys(_in const T& m, _in const std::vector<std::string>& k);
@@ -78,6 +79,9 @@ inline void util::initialize(void) {
 	std::filesystem::create_directories(path.project_dir);
 	std::filesystem::create_directories(path.config_dir);
 
+	// empty file.
+	if (not std::filesystem::exists(path.config_status)) gaenari::common::save_to_file(path.config_status, "");
+
 	// set log.
 	path.log_file_path = supul::common::path_join_const(path.data_dir, "log");
 	std::filesystem::create_directories(path.log_file_path);
@@ -106,6 +110,13 @@ inline T util::get_config_status(_in const std::string& name, _in const T& def) 
 	gaenari::common::prop p;
 	if (not p.read(path.config_status)) return def;
 	return p.get(name, def);
+}
+
+inline void util::set_config_status(_in const std::string& name, _in const std::string& value) {
+	gaenari::common::prop p;
+	if (not p.read(path.config_status)) ERROR0("fail to set_config_status.");
+	p.set(name, value);
+	p.save();
 }
 
 inline bool util::is_alnum(_in const std::string& s) {
