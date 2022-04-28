@@ -74,6 +74,13 @@ int main(void) try {
 		// res.content_length_ = 4;
 	});
 
+	svr.Get("/api/v1/report", [](const httplib::Request& req, httplib::Response& res) {
+		supul::supul::supul_t supul;
+		if (not supul.api.lifetime.open(path.project_dir)) ERROR0(supul.api.misc.errmsg());
+		auto report = supul.api.report.json("");
+		res.set_content(report, "application/json");
+	});
+
 	svr.Post("/api/v1/project", [](const httplib::Request& req, httplib::Response& res) {
 		// req.params["database_type"]	= "sqlite"
 		// req.params["index0"]			= "attrib_1/INTEGER/X"

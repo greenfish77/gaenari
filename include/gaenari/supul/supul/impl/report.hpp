@@ -462,6 +462,7 @@ inline void supul_t::report::chunk_history_to_json(_in const gaenari::common::js
 inline void supul_t::report::global_to_json(_in const gaenari::common::json_insert_order_map& option, _in_out gaenari::common::json_insert_order_map& json) {
 	if (not supul.db) THROW_SUPUL_INTERNAL_ERROR0;
 	auto g = supul.db->get_global();
+	if (common::get_variant_int64(g, "instance_count") == 0) THROW_SUPUL_ERROR("empty instance");
 	for (auto& it: g) {
 		auto& name  = it.first;
 		auto& value = it.second;
