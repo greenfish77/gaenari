@@ -1,10 +1,11 @@
 #include "gaenari-web-config.h"
 #include "gaenari/gaenari.hpp"
-#include "cpp-httplib/httplib.h"
 #include "type.hpp"
-#include "global.hpp"
 #include "exceptions.hpp"
+#include "supul_tester.hpp"
+#include "global.hpp"
 #include "util.hpp"
+#include "cpp-httplib/httplib.h"
 
 // $ cmake ..
 // $ cmake --build . --config release
@@ -27,6 +28,16 @@ int main(void) try {
 	gaenari::logger::info("welcome to <yellow>gaenari-web</yellow>", true);
 	gaenari::logger::info("**********************");
 	util::show_properties();
+
+	// supul instance.
+	supul::supul::supul_t supul;
+	set_supul(&supul);
+
+	// supul open.
+	if (util::get_config("project_created", false)) {
+		// project created, but open failed.
+		if (not supul.api.lifetime.open(path.project_dir)) ERROR0("fail to supul open.");
+	}
 
 	// http server context.
 	httplib::Server svr;
@@ -74,11 +85,14 @@ int main(void) try {
 		// res.content_length_ = 4;
 	});
 
-	svr.Get("/api/v1/report", [](const httplib::Request& req, httplib::Response& res) {
-		supul::supul::supul_t supul;
-		if (not supul.api.lifetime.open(path.project_dir)) ERROR0(supul.api.misc.errmsg());
+	svr.Get("/api/v1/report", [&supul](const httplib::Request& req, httplib::Response& res) {
 		auto report = supul.api.report.json("");
 		res.set_content(report, "application/json");
+	});
+
+	svr.Get("/api/v1/global", [&supul](const httplib::Request& req, httplib::Response& res) {
+		auto global = supul_tester(supul).get_db().get_global();
+		res.set_content(util::to_json_map_variant(global), "application/json");
 	});
 
 	svr.Post("/api/v1/project", [](const httplib::Request& req, httplib::Response& res) {
@@ -146,6 +160,10 @@ int main(void) try {
 	});
 
 	svr.listen(option.server.host.c_str(), option.server.port);
+
+	supul.api.lifetime.close();
+	set_supul(nullptr);
+	return 0;
 } catch(const error& e) {
 	std::string text;
 	std::string w = e.what();

@@ -17,6 +17,9 @@ struct util {
 
 	template<typename T>
 	inline static void check_map_has_keys(_in const T& m, _in const std::vector<std::string>& k);
+
+	template<typename T>
+	inline static std::string to_json_map_variant(_in const T& m);
 };
 
 inline std::string util::get_env(_in const std::string& name) {
@@ -168,6 +171,22 @@ inline void util::check_map_has_keys(_in const T& m, _in const std::vector<std::
 		msg.pop_back();
 		ERROR1("keys not found: %0.", msg);
 	}
+}
+
+template<typename T>
+inline std::string util::to_json_map_variant(_in const T& m) {
+	gaenari::common::json_insert_order_map json;
+
+	for (const auto& it: m) {
+		const auto& name = it.first;
+		const supul::type::value_variant& value = it.second; 
+		auto index = value.index();
+		if (index == 1) json.set_value({name}, std::get<1>(value));
+		else if (index == 2) json.set_value({name}, std::get<2>(value));
+		else if (index == 3) json.set_value({name}, std::get<3>(value));
+	}
+
+	return json.to_string<gaenari::common::json_insert_order_map::minimize>();
 }
 
 #endif // HEADER_UTIL_HPP
