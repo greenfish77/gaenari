@@ -95,6 +95,11 @@ int main(void) try {
 		res.set_content(util::to_json_map_variant(global), "application/json");
 	});
 
+	svr.Get("/api/v1/project/name", [&supul](const httplib::Request& req, httplib::Response& res) {
+		auto project_name = util::get_config("project_name", "");
+		res.set_content(util::to_json_map_variant(supul::type::map_variant{{"project_name", project_name}}), "application/json");
+	});
+
 	svr.Post("/api/v1/project", [](const httplib::Request& req, httplib::Response& res) {
 		// req.params["database_type"]	= "sqlite"
 		// req.params["index0"]			= "attrib_1/INTEGER/X"

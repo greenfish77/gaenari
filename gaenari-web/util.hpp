@@ -14,6 +14,7 @@ struct util {
 	inline static void set_config(_in const std::string& name, _in const std::string& value);
 	template<typename T>
 	inline static T get_config(_in const std::string& name, _in const T& def);
+	inline static std::string get_config(_in const std::string& name, _in const char* def);
 
 	template<typename T>
 	inline static void check_map_has_keys(_in const T& m, _in const std::vector<std::string>& k);
@@ -130,6 +131,12 @@ inline void util::set_config(_in const std::string& name, _in const std::string&
 
 template<typename T>
 inline T util::get_config(_in const std::string& name, _in const T& def) {
+	gaenari::common::prop p;
+	if (not p.read(path.config_file_path)) return def;
+	return p.get(name, def);
+}
+
+inline std::string util::get_config(_in const std::string& name, _in const char* def) {
 	gaenari::common::prop p;
 	if (not p.read(path.config_file_path)) return def;
 	return p.get(name, def);
